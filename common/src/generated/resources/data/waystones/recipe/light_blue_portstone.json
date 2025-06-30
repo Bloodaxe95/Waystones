@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": "minecraft:polished_andesite",
+    "D": "#c:dyes/light_blue",
+    "S": "minecraft:stone_bricks",
+    "W": "waystones:warp_stone"
+  },
+  "pattern": [
+    "DSD",
+    "SWS",
+    "BBB"
+  ],
+  "result": {
+    "count": 1,
+    "id": "waystones:light_blue_portstone"
+  }
+}

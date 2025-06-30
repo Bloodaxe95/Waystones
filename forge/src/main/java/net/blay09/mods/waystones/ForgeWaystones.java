@@ -2,11 +2,12 @@ package net.blay09.mods.waystones;
 
 import net.blay09.mods.balm.api.Balm;
 import net.blay09.mods.balm.api.client.BalmClient;
-import net.blay09.mods.waystones.client.WaystonesClient;
+import net.blay09.mods.balm.forge.ForgeLoadContext;
+import net.blay09.mods.waystones.client.ForgeWaystonesClient;
 import net.blay09.mods.waystones.compat.Compat;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +18,12 @@ public class ForgeWaystones {
 
     private static final Logger logger = LoggerFactory.getLogger(ForgeWaystones.class);
 
-    public ForgeWaystones() {
-        Balm.initialize(Waystones.MOD_ID, Waystones::initialize);
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> BalmClient.initialize(Waystones.MOD_ID, WaystonesClient::initialize));
+    public ForgeWaystones(FMLJavaModLoadingContext context) {
+        final var loadContext = new ForgeLoadContext(context.getModBusGroup());
+        Balm.initializeMod(Waystones.MOD_ID, loadContext, new Waystones());
+        if (FMLEnvironment.dist.isClient()) {
+            BalmClient.initializeMod(Waystones.MOD_ID, loadContext, ForgeWaystonesClient::initialize);
+        }
 
         Balm.initializeIfLoaded(Compat.THEONEPROBE, "net.blay09.mods.waystones.compat.TheOneProbeIntegration");
 

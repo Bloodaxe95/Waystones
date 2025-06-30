@@ -1,6 +1,7 @@
 # eclipse
 bin
 *.launch
+.eclipse
 .settings
 .metadata
 .classpath
@@ -24,4 +25,4 @@ runs
 runserver
 logs
 
-shared/src/main/generated/.cache
+common/src/generated/resources/.cache

@@ -20,34 +20,48 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.blay09.mods.${mod_id}.fabric.Fabric${mod_main}"
+      "net.blay09.mods.waystones.fabric.FabricWaystones"
     ],
     "client": [
-      "net.blay09.mods.${mod_id}.fabric.client.Fabric${mod_main}Client"
+      "net.blay09.mods.waystones.fabric.client.FabricWaystonesClient"
     ],
-    "modmenu": [
-      "net.blay09.mods.${mod_id}.fabric.compat.ModMenuIntegration"
+    "fabric-datagen": [
+      "net.blay09.mods.waystones.datagen.ModDataGenerator"
+    ],
+    "rei_client": [
+      "net.blay09.mods.waystones.compat.rei.RoughlyEnoughItemsIntegration"
+    ],
+    "journeymap": [
+      "net.blay09.mods.waystones.compat.JourneyMapIntegration"
+    ],
+    "jade": [
+      "net.blay09.mods.waystones.compat.JadeIntegration"
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json",
-    "${mod_id}.fabric.mixins.json"
+    "waystones.mixins.json",
+    "waystones.fabric.mixins.json"
   ],
 
   "depends": {
-    "fabricloader": ">=0.14",
+    "fabricloader": ">=${fabric_loader_version}",
     "fabric-api": "*",
     "balm-fabric": "*",
-    "minecraft": ">=1.20.2",
-    "java": ">=17"
+    "minecraft": ">=${minimum_minecraft_version}",
+    "java": ">=${java_version}"
   },
   "suggests": {
   },
   "custom": {
     "modmenu": {
       "links": {
-        "modmenu.discord": "https://discord.gg/VAfZ2Nau6j"
+        "modmenu.discord": "https://discord.gg/VAfZ2Nau6j",
+        "waystones.iconCredits": "https://opengameart.org/content/roguelikerpg-items"
       }
+    },
+    "waila:plugins": {
+      "id": "waystones:wthit",
+      "initializer": "net.blay09.mods.waystones.compat.WTHITIntegration"
     }
   }
 }

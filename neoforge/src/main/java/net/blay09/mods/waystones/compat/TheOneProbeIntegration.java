@@ -2,11 +2,11 @@ package net.blay09.mods.waystones.compat;
 
 import mcjty.theoneprobe.api.*;
 import net.blay09.mods.waystones.Waystones;
-import net.blay09.mods.waystones.api.IWaystone;
+import net.blay09.mods.waystones.api.Waystone;
 import net.blay09.mods.waystones.block.entity.WarpPlateBlockEntity;
 import net.blay09.mods.waystones.block.entity.WaystoneBlockEntityBase;
 import net.blay09.mods.waystones.core.PlayerWaystoneManager;
-import net.blay09.mods.waystones.core.WaystoneTypes;
+import net.blay09.mods.waystones.api.WaystoneTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -39,7 +39,7 @@ public class TheOneProbeIntegration {
 
         @Override
         public ResourceLocation getID() {
-            return new ResourceLocation(Waystones.MOD_ID, "top");
+            return ResourceLocation.fromNamespaceAndPath(Waystones.MOD_ID, "top");
         }
 
         @Override
@@ -52,10 +52,10 @@ public class TheOneProbeIntegration {
                 ITextComponent galacticName = WarpPlateBlock.getGalacticName(waystone);
                 info.text(galacticName); */
             } else if (tileEntity instanceof WaystoneBlockEntityBase) {
-                IWaystone waystone = ((WaystoneBlockEntityBase) tileEntity).getWaystone();
+                Waystone waystone = ((WaystoneBlockEntityBase) tileEntity).getWaystone();
                 boolean isActivated = !waystone.getWaystoneType().equals(WaystoneTypes.WAYSTONE) || PlayerWaystoneManager.isWaystoneActivated(player, waystone);
                 if (isActivated && waystone.hasName() && waystone.isValid()) {
-                    info.text(Component.literal(waystone.getName()));
+                    info.text(waystone.getName());
                 } else {
                     info.text(Component.translatable("tooltip.waystones.undiscovered"));
                 }

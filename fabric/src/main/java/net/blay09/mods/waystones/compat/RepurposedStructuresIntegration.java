@@ -8,11 +8,12 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.function.Supplier;
 
 public class RepurposedStructuresIntegration {
+    @SuppressWarnings("unchecked")
     public RepurposedStructuresIntegration() {
-        BuiltInRegistries.REGISTRY.getOptional(new ResourceLocation("repurposed_structures", "json_conditions"))
+        BuiltInRegistries.REGISTRY.getOptional(ResourceLocation.fromNamespaceAndPath("repurposed_structures", "json_conditions"))
                 .ifPresent(registry -> Registry.register(
                         (Registry<Supplier<Boolean>>) registry,
-                        new ResourceLocation("waystones", "config"),
-                        () -> WaystonesConfig.getActive().worldGen.spawnInVillages || WaystonesConfig.getActive().worldGen.forceSpawnInVillages));
+                        ResourceLocation.fromNamespaceAndPath("waystones", "config"),
+                        () -> WaystonesConfig.getActive().worldGen.spawnInVillages != WaystonesConfig.VillageWaystoneGeneration.DISABLED));
     }
 }

@@ -1,0 +1,225 @@
+
+package net.blay09.mods.waystones.store;
+
+import net.blay09.mods.balm.api.Balm;
+import net.blay09.mods.waystones.api.Waystone;
+import net.blay09.mods.waystones.core.WaystoneProxy;
+import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+
+import java.util.*;
+
+public class PersistentWaystonesPlayerStore implements WaystonesPlayerStore {
+    private static final String TAG_NAME = "WaystonesData";
+    private static final String ACTIVATED_WAYSTONES = "Waystones";
+    private static final String SORTING_INDEX = "SortingIndex";
+    private static final String COOLDOWNS = "Cooldowns";
+
+    @Override
+    public void activateWaystone(Player player, Waystone waystone) {
+        ListTag activatedWaystonesData = getActivatedWaystonesData(getWaystonesData(player));
+        activatedWaystonesData.add(StringTag.valueOf(waystone.getWaystoneUid().toString()));
+    }
+
+    @Override
+    public boolean isWaystoneActivated(Player player, Waystone waystone) {
+        ListTag activatedWaystones = getActivatedWaystonesData(getWaystonesData(player));
+        String waystoneUid = waystone.getWaystoneUid().toString();
+        for (Tag activatedWaystone : activatedWaystones) {
+            if (activatedWaystone.asString().map(waystoneUid::equals).orElse(false)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public List<Waystone> getWaystones(Player player) {
+        final var activatedWaystonesTag = getActivatedWaystonesData(getWaystonesData(player));
+        final var waystones = new ArrayList<Waystone>();
+        for (final var iterator = activatedWaystonesTag.iterator(); iterator.hasNext(); ) {
+            final var activatedWaystoneTag = iterator.next();
+            activatedWaystoneTag.asString().map(UUID::fromString).ifPresentOrElse(waystoneId -> {
+                final var proxy = new WaystoneProxy(player.getServer(), waystoneId);
+                if (proxy.isValid()) {
+                    waystones.add(proxy);
+                } else {
+                    iterator.remove();
+                }
+            }, iterator::remove);
+        }
+
+        return waystones;
+    }
+
+    @Override
+    public List<UUID> getSortingIndex(Player player) {
+        final var sortingIndex = getSortingIndexData(getWaystonesData(player));
+        final var result = new ArrayList<UUID>();
+        for (final var entry : sortingIndex) {
+            entry.asString().map(UUID::fromString).ifPresent(result::add);
+        }
+        return result;
+    }
+
+    @Override
+    public void setSortingIndex(Player player, List<UUID> sortingIndex) {
+        final var sortingIndexData = getSortingIndexData(getWaystonesData(player));
+        sortingIndexData.clear();
+        for (final var waystoneUid : sortingIndex) {
+            sortingIndexData.add(StringTag.valueOf(waystoneUid.toString()));
+        }
+    }
+
+    @Override
+    public List<UUID> ensureSortingIndex(Player player, Collection<Waystone> waystones) {
+        final var sortingIndexData = getSortingIndexData(getWaystonesData(player));
+        final var sortingIndex = new ArrayList<UUID>();
+        final var existing = new HashSet<UUID>();
+        for (final var sortingIndexEntry : sortingIndexData) {
+            sortingIndexEntry.asString().map(UUID::fromString).ifPresent(waystoneUid -> {
+                if (existing.add(waystoneUid)) {
+                    sortingIndex.add(waystoneUid);
+                }
+            });
+        }
+
+        for (final var waystone : waystones) {
+            final var waystoneUid = waystone.getWaystoneUid();
+            if (!existing.contains(waystoneUid)) {
+                sortingIndex.add(waystoneUid);
+                sortingIndexData.add(StringTag.valueOf(waystoneUid.toString()));
+            }
+        }
+
+        return sortingIndex;
+    }
+
+    @Override
+    public void sortWaystoneAsFirst(Player player, UUID waystoneUid) {
+        final var sortingIndex = getSortingIndexData(getWaystonesData(player));
+        for (int i = 0; i < sortingIndex.size(); i++) {
+            final var sortingIndexEntry = sortingIndex.get(i);
+            if (sortingIndexEntry.asString().map(it -> waystoneUid.toString().equals(it)).orElse(false)) {
+                sortingIndex.remove(i);
+                sortingIndex.add(0, sortingIndexEntry);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void sortWaystoneAsLast(Player player, UUID waystoneUid) {
+        final var sortingIndex = getSortingIndexData(getWaystonesData(player));
+        for (int i = 0; i < sortingIndex.size(); i++) {
+            final var sortingIndexEntry = sortingIndex.get(i);
+            if (sortingIndexEntry.asString().map(it -> waystoneUid.toString().equals(it)).orElse(false)) {
+                sortingIndex.remove(i);
+                sortingIndex.add(sortingIndexEntry);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void sortWaystoneSwap(Player player, UUID waystoneUid, UUID otherWaystoneUid) {
+        final var sortingIndex = getSortingIndexData(getWaystonesData(player));
+        int waystoneIndex = -1;
+        int otherWaystoneIndex = -1;
+        for (int i = 0; i < sortingIndex.size(); i++) {
+            final var sortingIndexEntry = sortingIndex.get(i);
+            if (sortingIndexEntry.asString().map(it -> waystoneUid.toString().equals(it)).orElse(false)) {
+                waystoneIndex = i;
+            } else if (sortingIndexEntry.asString().map(it -> otherWaystoneUid.toString().equals(it)).orElse(false)) {
+                otherWaystoneIndex = i;
+            }
+        }
+
+        if (waystoneIndex != -1 && otherWaystoneIndex != -1) {
+            Collections.swap(sortingIndex, waystoneIndex, otherWaystoneIndex);
+        }
+    }
+
+    @Override
+    public void deactivateWaystone(Player player, Waystone waystone) {
+        CompoundTag data = getWaystonesData(player);
+        ListTag activatedWaystones = getActivatedWaystonesData(data);
+        String waystoneUid = waystone.getWaystoneUid().toString();
+        for (int i = activatedWaystones.size() - 1; i >= 0; i--) {
+            Tag activatedWaystone = activatedWaystones.get(i);
+            if (activatedWaystone.asString().map(waystoneUid::equals).orElse(false)) {
+                activatedWaystones.remove(i);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public Map<ResourceLocation, Long> getCooldowns(Player player) {
+        final var waystonesData = getWaystonesData(player);
+        final var cooldownMap = new HashMap<ResourceLocation, Long>();
+        waystonesData.getCompound(COOLDOWNS).ifPresent(cooldowns -> {
+            for (final var key : cooldowns.keySet()) {
+                cooldownMap.put(ResourceLocation.parse(key), cooldowns.getLongOr(key, 0));
+            }
+        });
+
+        return cooldownMap;
+    }
+
+    @Override
+    public void resetCooldowns(Player player) {
+        final var waystonesData = getWaystonesData(player);
+        waystonesData.put(COOLDOWNS, new CompoundTag());
+    }
+
+    @Override
+    public long getCooldownUntil(Player player, ResourceLocation key) {
+        final var waystonesData = getWaystonesData(player);
+        return waystonesData.getCompound(COOLDOWNS)
+                .flatMap(it -> it.getLong(key.toString()))
+                .orElse(0L);
+    }
+
+    @Override
+    public void setCooldownUntil(Player player, ResourceLocation key, long timeStamp) {
+        final var waystonesData = getWaystonesData(player);
+        final var cooldowns = waystonesData.getCompoundOrEmpty(COOLDOWNS);
+        cooldowns.putLong(key.toString(), timeStamp);
+        waystonesData.put(COOLDOWNS, cooldowns);
+    }
+
+    private static ListTag getActivatedWaystonesData(CompoundTag data) {
+        ListTag list = data.getListOrEmpty(ACTIVATED_WAYSTONES);
+        data.put(ACTIVATED_WAYSTONES, list);
+        return list;
+    }
+
+    private static ListTag getSortingIndexData(CompoundTag data) {
+        ListTag list = data.getList(SORTING_INDEX).orElseGet(() -> createSortingIndexFromLegacy(data));
+        data.put(SORTING_INDEX, list);
+        return list;
+    }
+
+    private static CompoundTag getWaystonesData(Player player) {
+        CompoundTag persistedData = Balm.getHooks().getPersistentData(player);
+        CompoundTag compound = persistedData.getCompoundOrEmpty(TAG_NAME);
+        persistedData.put(TAG_NAME, compound);
+        return compound;
+    }
+
+    private static ListTag createSortingIndexFromLegacy(CompoundTag data) {
+        final var activatedWaystones = getActivatedWaystonesData(data);
+        if (activatedWaystones.isEmpty()) {
+            return new ListTag();
+        }
+
+        final var sortingIndex = new ListTag();
+        sortingIndex.addAll(activatedWaystones);
+        return sortingIndex;
+    }
+
+}

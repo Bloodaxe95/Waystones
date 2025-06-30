@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": "#c:dyes/lime",
+    "O": "minecraft:obsidian",
+    "S": "minecraft:stone_bricks",
+    "W": "waystones:warp_stone"
+  },
+  "pattern": [
+    "SSS",
+    "DWD",
+    "OOO"
+  ],
+  "result": {
+    "count": 1,
+    "id": "waystones:lime_sharestone"
+  }
+}
